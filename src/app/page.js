@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
+import ProposalEngine from '@/components/ProposalEngine';
 
 // ═══════════════════════════════════════════════════════════════
 // MURAL HEALTH PRICING ENGINE — Main Application Shell
@@ -62,26 +63,8 @@ export default function HomePage() {
         </div>
       </div>
 
-      {tab === 'proposals' && <ProposalsPlaceholder profile={profile} />}
+      {tab === 'proposals' && <ProposalEngine supabase={supabase} profile={profile} />}
       {tab === 'admin' && isAdmin && <AdminPanel profile={profile} />}
-    </div>
-  );
-}
-
-function ProposalsPlaceholder({ profile }) {
-  return (
-    <div style={{ maxWidth:1100, margin:'0 auto', padding:'40px 20px', textAlign:'center' }}>
-      <div style={{ background:'#fff', borderRadius:14, border:'1px solid #E2E8F0', padding:'60px 40px' }}>
-        <div style={{ fontSize:40, marginBottom:12 }}>📋</div>
-        <h2 style={{ fontSize:20, fontWeight:800, color:'#1A2332', margin:'0 0 8px' }}>Pricing Engine</h2>
-        <p style={{ color:'#718096', fontSize:14 }}>Welcome, {profile.full_name || profile.email}!</p>
-        <p style={{ color:'#A0AEC0', fontSize:13, marginTop:8 }}>
-          ✅ Authentication & authorization working. Your role: <strong>{profile.role}</strong>
-        </p>
-        <p style={{ color:'#A0AEC0', fontSize:12, marginTop:16 }}>
-          The proposal editor components will be wired in here next.
-        </p>
-      </div>
     </div>
   );
 }
