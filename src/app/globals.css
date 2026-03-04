@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,300;0,6..12,400;0,6..12,600;0,6..12,700;0,6..12,800;1,6..12,400&display=swap');
+
+body {
+  font-family: 'Nunito Sans', system-ui, -apple-system, sans-serif;
+  background: #F4F7FA;
+  color: #1A2332;
+}
