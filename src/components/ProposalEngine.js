@@ -379,17 +379,6 @@ export default function ProposalEngine({ supabase, profile }) {
           <div style={{ position: 'sticky', top: 16 }}>
             <ProtocolUploader onExtract={handleProtocolExtract} />
 
-            {/* AI Suggestions */}
-            {meta.suggestions?.length > 0 && (
-              <Card title="AI Suggestions" badge="Review">
-                {meta.suggestions.map((sug, i) => (
-                  <div key={i} style={{ padding: '8px 10px', background: '#FFFBEB', borderRadius: 6, marginBottom: 6, fontSize: 12, color: '#92400E', lineHeight: 1.5, borderLeft: '3px solid #F59E0B' }}>
-                    💡 {sug}
-                  </div>
-                ))}
-              </Card>
-            )}
-
             {/* Study Profile */}
             <Card title="Study Profile" accent>
               <FG label="Sponsor">{styledInput('sponsor', 'text', s.sponsor, e => updateStudy('sponsor', e.target.value))}</FG>
@@ -467,7 +456,7 @@ export default function ProposalEngine({ supabase, profile }) {
               </div>
             </>
           )}
-          {view === 'internal' && <InternalView study={s} fees={f} discountFootnotes={discountFootnotes} suggestions={meta.suggestions} />}
+          {view === 'internal' && <InternalView study={s} fees={f} discountFootnotes={discountFootnotes} suggestions={meta.suggestions} extractedFields={meta.extractedFields} />}
           {view === 'customer' && <CustomerView study={s} fees={f} meta={meta} discountFootnotes={discountFootnotes} />}
           {view === 'proposal' && <ProposalView study={s} fees={f} meta={meta} discountFootnotes={discountFootnotes} />}
         </div>
@@ -617,7 +606,7 @@ function ProtocolUploader({ onExtract }) {
 
 // ── Fee Breakdown Views ──
 
-function InternalView({ study: s, fees: f, discountFootnotes, suggestions }) {
+function InternalView({ study: s, fees: f, discountFootnotes, suggestions, extractedFields }) {
   return (
     <div>
       <Card title="Mural Link Core" badge="Required" accent>
@@ -675,14 +664,31 @@ function InternalView({ study: s, fees: f, discountFootnotes, suggestions }) {
         </div>
       </Card>
 
-      {suggestions?.length > 0 && (
-        <Card title="Protocol Analysis Insights" badge="AI">
+      {extractedFields?.length > 0 && suggestions?.length > 0 && <CollapsibleSuggestions suggestions={suggestions} />}
+    </div>
+  );
+}
+
+function CollapsibleSuggestions({ suggestions }) {
+  const [open, setOpen] = useState(false);
+  if (!suggestions || suggestions.length === 0) return null;
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E2E8F0', overflow: 'hidden', marginBottom: 12, boxShadow: '0 1px 2px rgba(0,0,0,.03)' }}>
+      <div onClick={() => setOpen(!open)} style={{ padding: '12px 16px', borderBottom: open ? '1px solid #E2E8F0' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: 'linear-gradient(135deg,rgba(245,158,11,.04),rgba(254,243,199,.2))' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h3 style={{ fontSize: 13, fontWeight: 700, color: '#1A2332', margin: 0 }}>Suggestions Based on Protocol Review</h3>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 12, background: '#FFFBEB', color: '#D97706' }}>{suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''}</span>
+        </div>
+        <span style={{ fontSize: 14, color: '#A0AEC0', transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none' }}>▼</span>
+      </div>
+      {open && (
+        <div style={{ padding: '14px 16px' }}>
           {suggestions.map((sug, i) => (
             <div key={i} style={{ padding: '8px 10px', background: '#FFFBEB', borderRadius: 6, marginBottom: 6, fontSize: 12, color: '#92400E', lineHeight: 1.5, borderLeft: '3px solid #F59E0B' }}>
               💡 {sug}
             </div>
           ))}
-        </Card>
+        </div>
       )}
     </div>
   );
