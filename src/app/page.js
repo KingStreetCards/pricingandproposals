@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import ProposalEngine from '@/components/ProposalEngine';
+import DataDictionary from '@/components/DataDictionary';
 
 // ═══════════════════════════════════════════════════════════════
 // MURAL HEALTH PRICING ENGINE — Main Application Shell
@@ -80,7 +81,7 @@ function AdminPanel({ profile }) {
       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:20 }}>
         <h2 style={{ fontSize:20, fontWeight:800, color:'#1A2332', margin:0 }}>Admin</h2>
         <div style={{ display:'inline-flex', background:'#fff', borderRadius:8, padding:2, border:'1px solid #E2E8F0', marginLeft:12 }}>
-          {[['users','Users'],['proposals','All Proposals'],['pricing','Rate Card'],['discounts','Discounts'],['requests','Discount Requests']].map(([k,l]) => (
+          {[['users','Users'],['proposals','All Proposals'],['pricing','Rate Card'],['discounts','Discounts'],['requests','Discount Requests'],['dictionary','Data Dictionary']].map(([k,l]) => (
             <button key={k} onClick={() => setAdminTab(k)}
               style={{padding:'6px 14px',border:'none',borderRadius:6,fontSize:12,fontWeight:600,cursor:'pointer',
                 background: adminTab===k ? '#00BCD4' : 'transparent', color: adminTab===k ? '#fff' : '#718096'}}>{l}</button>
@@ -92,6 +93,7 @@ function AdminPanel({ profile }) {
       {adminTab === 'pricing' && <RateCardAdmin />}
       {adminTab === 'discounts' && <DiscountsAdmin />}
       {adminTab === 'requests' && <DiscountRequestsAdmin />}
+      {adminTab === 'dictionary' && <DataDictionary />}
     </div>
   );
 }

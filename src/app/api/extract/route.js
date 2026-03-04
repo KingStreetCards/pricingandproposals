@@ -19,7 +19,21 @@ const EXTRACT_PROMPT = `Extract clinical trial information from this protocol do
   "sites": number of clinical sites,
   "studyMonths": study duration in months,
   "visitsPerPatient": number of visits per patient,
-  "notes": "any relevant details about the study design, endpoints, population, visit schedules, or special considerations that would affect pricing"
+  "notes": "any relevant details about study design, endpoints, population, visit schedules",
+  "confidence": {
+    "sponsor": "high|medium|low",
+    "studyName": "high|medium|low",
+    "phase": "high|medium|low",
+    "patients": "high|medium|low",
+    "sites": "high|medium|low",
+    "countriesExUS": "high|medium|low",
+    "studyMonths": "high|medium|low",
+    "visitsPerPatient": "high|medium|low",
+    "screenFails": "high|medium|low"
+  },
+  "suggestions": [
+    "Each suggestion should be a specific, actionable recommendation for the pricing team based on study characteristics. Examples: if pediatric, suggest adding caregivers; if oncology with long treatment, flag dropout risk; if many countries, suggest concierge travel; if complex visit schedule, flag Patient Kindness. Include rationale."
+  ]
 }
 Return ONLY valid JSON, no markdown backticks or other text.`;
 
@@ -65,7 +79,7 @@ async function extractFromChunk(base64, mediaType, apiKey, chunkLabel) {
 /**
  * Merge multiple extraction results — prefer non-null values,
  * take the most specific (longest) string, highest number for counts,
- * and concatenate all notes.
+ * concatenate notes, merge confidence (take highest), collect all suggestions.
  */
 function mergeResults(results) {
   const merged = {
@@ -73,9 +87,11 @@ function mergeResults(results) {
     patients: null, caregivers: null, screenFails: null,
     countriesExUS: null, sites: null, studyMonths: null,
     visitsPerPatient: null, notes: '',
+    confidence: {}, suggestions: [],
   };
 
   const allNotes = [];
+  const confRank = { high: 3, medium: 2, low: 1 };
 
   for (const r of results) {
     if (!r) continue;
@@ -95,13 +111,28 @@ function mergeResults(results) {
       }
     }
 
+    // Confidence: take highest confidence per field
+    if (r.confidence) {
+      for (const [key, level] of Object.entries(r.confidence)) {
+        if (!merged.confidence[key] || (confRank[level] || 0) > (confRank[merged.confidence[key]] || 0)) {
+          merged.confidence[key] = level;
+        }
+      }
+    }
+
+    // Suggestions: collect all
+    if (r.suggestions && Array.isArray(r.suggestions)) {
+      merged.suggestions.push(...r.suggestions);
+    }
+
     // Notes: collect all
     if (r.notes) allNotes.push(r.notes);
   }
 
-  // Deduplicate and combine notes
+  // Deduplicate notes and suggestions
   const uniqueNotes = [...new Set(allNotes)];
   merged.notes = uniqueNotes.join(' | ');
+  merged.suggestions = [...new Set(merged.suggestions)];
 
   return merged;
 }
