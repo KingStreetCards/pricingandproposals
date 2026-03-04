@@ -1,22 +1,44 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+export const maxDuration = 60;
 
 /**
  * POST /api/extract
- * Accepts a base64-encoded PDF and uses Claude to extract study parameters
- * Keeps the Anthropic API key server-side (never exposed to browser)
+ * Accepts a Supabase Storage path, downloads the PDF server-side,
+ * and uses Claude to extract study parameters.
  */
 export async function POST(request) {
   try {
-    const { base64, mediaType } = await request.json();
+    const { storagePath } = await request.json();
 
-    if (!base64) {
-      return NextResponse.json({ error: 'No file data provided' }, { status: 400 });
+    if (!storagePath) {
+      return NextResponse.json({ error: 'No storage path provided' }, { status: 400 });
     }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: 'Anthropic API key not configured' }, { status: 500 });
+      return NextResponse.json({ error: 'Anthropic API key not configured. Add ANTHROPIC_API_KEY to Vercel environment variables.' }, { status: 500 });
     }
+
+    // Download file from Supabase Storage
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    const { data: fileData, error: dlError } = await supabase.storage
+      .from('protocols')
+      .download(storagePath);
+
+    if (dlError || !fileData) {
+      return NextResponse.json({ error: 'Failed to download file: ' + (dlError?.message || 'unknown') }, { status: 500 });
+    }
+
+    // Convert to base64
+    const arrayBuffer = await fileData.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    const mediaType = storagePath.endsWith('.pdf') ? 'application/pdf' : 'image/png';
 
     const contentBlock = mediaType === 'application/pdf'
       ? { type: 'document', source: { type: 'base64', media_type: mediaType, data: base64 } }
@@ -69,6 +91,9 @@ Return ONLY valid JSON, no markdown backticks or other text.`
     const text = data.content.map(i => i.text || '').join('\n');
     const clean = text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
+
+    // Clean up the uploaded file
+    await supabase.storage.from('protocols').remove([storagePath]);
 
     return NextResponse.json(parsed);
   } catch (err) {

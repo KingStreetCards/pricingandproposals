@@ -153,15 +153,17 @@ export default function ProposalEngine({ supabase, profile }) {
 
   // Protocol extraction
   const handleProtocolExtract = async (file) => {
-    const base64 = await new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload = () => res(r.result.split(",")[1]);
-      r.onerror = () => rej(new Error("Read failed"));
-      r.readAsDataURL(file);
-    });
+    // Upload PDF to Supabase Storage (bypasses Vercel's 4.5MB body limit)
+    const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const { error: uploadErr } = await supabase.storage
+      .from('protocols')
+      .upload(fileName, file);
+    if (uploadErr) throw new Error('Upload failed: ' + uploadErr.message);
+
+    // Call server API with just the storage path — server downloads & processes
     const resp = await fetch('/api/extract', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ base64, mediaType: file.type || 'application/pdf' }),
+      body: JSON.stringify({ storagePath: fileName }),
     });
     const data = await resp.json();
     if (data.error) throw new Error(data.error);
